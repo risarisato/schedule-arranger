@@ -7,9 +7,27 @@ const helmet = require('helmet');
 const session = require('express-session');
 const passport = require('passport');
 
+// モデルの読み込み
+const User = require('./models/user');
+const Schedule = require('./models/schedule');
+const Availability = require('./models/availability');
+const Candidate = require('./models/candidate');
+const Comment = require('./models/comment');
+User.sync().then(async () => {
+  Schedule.belongsTo(User, {foreignKey: 'createdBy'});
+  Schedule.sync();
+  Comment.belongsTo(User, {foreignKey: 'userId'});
+  Comment.sync();
+  Availability.belongsTo(User, {foreignKey: 'userId'});
+  await Candidate.sync();
+  Availability.belongsTo(Candidate, {foreignKey: 'candidateId'});
+  Availability.sync();
+});
+
 const GitHubStrategy = require('passport-github2').Strategy;
 const GITHUB_CLIENT_ID = '7e7d8d184db84e0c95fa';
-const GITHUB_CLIENT_SECRET = '3d26c9276396bf68a7d1566b9466f4a2e798954f';
+var GITHUB_CLIENT_SECRET_SCHEDULE_ARRANGER= process.env.GITHUB_CLIENT_SECRET_SCHEDULE_ARRANGER;
+
 
 passport.serializeUser(function (user, done) {
   done(null, user);
@@ -21,12 +39,16 @@ passport.deserializeUser(function (obj, done) {
 
 passport.use(new GitHubStrategy({
   clientID: GITHUB_CLIENT_ID,
-  clientSecret: GITHUB_CLIENT_SECRET,
+  clientSecret: GITHUB_CLIENT_SECRET_SCHEDULE_ARRANGER,
   callbackURL: 'http://localhost:8000/auth/github/callback'
 },
   function (accessToken, refreshToken, profile, done) {
-    process.nextTick(function () {
-      return done(null, profile);
+    process.nextTick(async function () {
+      await User.upsert({
+        userId: profile.id,
+        username: profile.username
+      });
+      done(null, profile);
     });
   }
 ));
