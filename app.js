@@ -7,6 +7,7 @@ var logger = require('morgan');
 const helmet = require('helmet');
 const session = require('express-session');
 const passport = require('passport');
+const commentsRouter = require('./routes/comments');
 
 // モデルの読み込み
 const User = require('./models/user');
@@ -81,6 +82,7 @@ app.use('/login', loginRouter);
 app.use('/logout', logoutRouter);
 app.use('/schedules', schedulesRouter);
 app.use('/schedules', availabilitiesRouter);
+app.use('/schedules', commentsRouter);
 
 app.get('/auth/github',
   passport.authenticate('github', { scope: ['user:email'] }),
