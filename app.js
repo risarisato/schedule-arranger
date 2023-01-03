@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -26,8 +28,7 @@ User.sync().then(async () => {
 
 const GitHubStrategy = require('passport-github2').Strategy;
 const GITHUB_CLIENT_ID = '7e7d8d184db84e0c95fa';
-var GITHUB_CLIENT_SECRET_SCHEDULE_ARRANGER= process.env.GITHUB_CLIENT_SECRET_SCHEDULE_ARRANGER;
-
+var GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 
 passport.serializeUser(function (user, done) {
   done(null, user);
@@ -39,7 +40,7 @@ passport.deserializeUser(function (obj, done) {
 
 passport.use(new GitHubStrategy({
   clientID: GITHUB_CLIENT_ID,
-  clientSecret: GITHUB_CLIENT_SECRET_SCHEDULE_ARRANGER,
+  clientSecret: GITHUB_CLIENT_SECRET,
   callbackURL: 'http://localhost:8000/auth/github/callback'
 },
   function (accessToken, refreshToken, profile, done) {
@@ -56,6 +57,7 @@ passport.use(new GitHubStrategy({
 var indexRouter = require('./routes/index');
 const loginRouter = require('./routes/login');
 const logoutRouter = require('./routes/logout');
+const schedulesRouter = require('./routes/schedules');
 
 var app = express();
 app.use(helmet());
@@ -70,7 +72,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(session({ secret: 'e55be81b307c1c09', resave: false, saveUninitialized: false }));
+app.use(session({ secret: process.env.EXPRESS_SESSION_SECRET, resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -78,6 +80,7 @@ app.use(passport.session());
 app.use('/', indexRouter);
 app.use('/login', loginRouter);
 app.use('/logout', logoutRouter);
+app.use('/schedules', schedulesRouter);
 
 app.get('/auth/github',
   passport.authenticate('github', { scope: ['user:email'] }),
